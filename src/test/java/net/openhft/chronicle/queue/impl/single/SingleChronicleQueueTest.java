@@ -39,7 +39,6 @@ import org.junit.runners.Parameterized;
 import java.io.File;
 import java.io.IOException;
 import java.io.StreamCorruptedException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.*;
@@ -3774,7 +3773,12 @@ public class SingleChronicleQueueTest extends ChronicleQueueTestBase {
         try (final SingleChronicleQueue queue =
                      builder(dir, wireType).
                              testBlockSize().build()) {
-
+            try(final DocumentContext dc = queue.acquireAppender().writingDocument()){
+                dc.wire().write().bytes("foo".getBytes());
+            }
+            try(final DocumentContext dc = queue.acquireTailer().readingDocument()){
+                dc.wire().read().bytes();
+            }
         }
 
         Files.walk(dir.toPath()).forEach(p -> {
